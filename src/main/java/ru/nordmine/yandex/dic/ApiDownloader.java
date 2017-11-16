@@ -7,8 +7,8 @@ import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -16,7 +16,7 @@ public class ApiDownloader {
 
     private static final Logger logger = Logger.getLogger(ApiDownloader.class);
 
-    private static final String COMMON_URL = "https://dictionary.yandex.net/api/v1/dicservice/lookup?key=API_KEY&lang=en-ru&ui=en&text=";
+    private static final String COMMON_URL = "https://dictionary.yandex.net/api/v1/dicservice/lookup?key=API_KEY&lang=en-ru&flags=5&ui=en&text=";
 
     private static final int ERR_OK = 200; // Операция выполнена успешно
     private static final int ERR_KEY_INVALID = 401; // Ключ API невалиден
@@ -24,24 +24,22 @@ public class ApiDownloader {
     private static final int ERR_DAILY_REQ_LIMIT_EXCEEDED = 403; // Превышено суточное ограничение на количество запросов
     private static final int ERR_TEXT_TOO_LONG = 413; // Превышен максимальный размер текста
 
-    public void parseWords(String apiKey, List<String> words, String wordsDir) throws IOException, InterruptedException {
+    public void parseWords(List<String> words, String outputDir, String apiKey) throws Exception {
         int counter = 1;
         for (String word : words) {
-            File subDirFile = new File(wordsDir + File.separator + word.substring(0, 1));
+            File subDirFile = new File(outputDir + File.separator + word.substring(0, 1));
             if (!subDirFile.exists()) {
                 subDirFile.mkdir();
             }
-            File wordFile = new File(subDirFile.getAbsolutePath() + File.separator + word);
-            if (wordFile.exists()) {
-                logger.info("File " + word + " already exists");
-            } else {
+            File wordFile = new File(subDirFile.getAbsolutePath() + File.separator + word + ".xml");
+            if (!wordFile.exists()) {
                 HttpResponse response = RequestHelper.executeGetRequest(COMMON_URL.replace("API_KEY", apiKey) + URLEncoder.encode(word, "utf-8"));
                 int statusCode = response.getStatusLine().getStatusCode();
                 switch (statusCode) {
                     case ERR_OK:
                         String responseBody = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
                         logger.info(String.format("Process: %s (%s in %s)", word, counter, words.size()));
-                        FileUtils.writeStringToFile(wordFile, responseBody, Charsets.UTF_8);
+                        FileUtils.writeStringToFile(wordFile, responseBody, StandardCharsets.UTF_8);
                         break;
                     case ERR_KEY_INVALID:
                         logger.error("Api key invalid!");

@@ -1,0 +1,5 @@
+good|better|best
+bad|worse|worst
+old|older,elder|oldest,eldest
+little|less,lesser,littler|least,littlest
+far|farther,further|farthest,furthest,farthermost,furthermost
